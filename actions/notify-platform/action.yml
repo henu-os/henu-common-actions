@@ -1,0 +1,23 @@
+name: 'Notify HENU Platform API'
+description: 'Sends an HMAC-signed release notification to the HENU Platform API'
+inputs:
+  api-url:
+    description: 'HENU Platform API Webhook or Ingress URL'
+    required: true
+  webhook-secret:
+    description: 'HMAC Webhook signing secret'
+    required: true
+  manifest-path:
+    description: 'Path to release contract manifest JSON'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Deliver Platform Notification
+      shell: bash
+      env:
+        HENU_PLATFORM_API_URL: ${{ inputs.api-url }}
+        HENU_WEBHOOK_SECRET: ${{ inputs.webhook-secret }}
+      run: |
+        node ${{ github.action_path }}/../../scripts/notify-platform.js "${{ inputs.manifest-path }}"

@@ -1,0 +1,32 @@
+{
+  "name": "henu-common-actions",
+  "version": "1.0.0",
+  "description": "Reusable GitHub Actions workflows and release automation for the HENU Operating System ecosystem",
+  "author": "HENU OS PRIVATE LIMITED",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "jest --config jest.config.cjs",
+    "lint": "eslint \"scripts/**/*.js\" \"test/**/*.ts\" --max-warnings=0",
+    "format": "prettier --write \"**/*.{js,ts,json,md,yml,yaml}\""
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.17.10",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.6.3"
+  }
+}

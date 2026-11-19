@@ -1,0 +1,44 @@
+{
+  "productId": "henu-pa",
+  "productName": "HENU PA",
+  "version": "1.0.0",
+  "channel": "stable",
+  "releaseDate": "2026-11-19T00:00:00Z",
+  "releaseNotes": "Production release of HENU PA with voice command parsing, workflow triggers, and native tray minimization.",
+  "minHubVersion": "1.0.0",
+  "repository": {
+    "owner": "henu-os",
+    "name": "henu-pa",
+    "url": "https://github.com/henu-os/henu-pa"
+  },
+  "assets": [
+    {
+      "fileName": "henu-pa-1.0.0-windows-x64.msi",
+      "os": "windows",
+      "arch": "x86_64",
+      "packageFormat": "msi",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 45000000,
+      "installer": {
+        "executablePath": "C:\\Program Files\\HENU\\HENU PA\\henu-pa.exe",
+        "silentArgs": ["/qn", "/norestart"]
+      }
+    },
+    {
+      "fileName": "henu-pa-1.0.0-macos-universal.dmg",
+      "os": "macos",
+      "arch": "universal",
+      "packageFormat": "dmg",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 52000000
+    },
+    {
+      "fileName": "henu-pa-1.0.0-linux-x86_64.appimage",
+      "os": "linux",
+      "arch": "x86_64",
+      "packageFormat": "appimage",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 48000000
+    }
+  ]
+}

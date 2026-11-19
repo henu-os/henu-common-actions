@@ -1,0 +1,60 @@
+name: 'Release HENU IDE'
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version (e.g., 3.1.2)'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+        default: stable
+      release-notes:
+        description: 'Release changelog notes in Markdown'
+        required: false
+        default: 'Production release of HENU IDE with accelerated polyglot language servers and kernel integration.'
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Execute HENU IDE Release Pipeline
+    uses: henu-os/henu-common-actions/.github/workflows/release-orchestrator.yml@v1
+    with:
+      product-id: 'henu-ide'
+      product-name: 'HENU IDE'
+      version: ${{ inputs.version || '3.1.2' }}
+      channel: ${{ inputs.channel || 'stable' }}
+      git-tag: ${{ github.ref_name }}
+      release-notes: ${{ inputs.release-notes || 'HENU IDE Official Release' }}
+      min-hub-version: '1.0.0'
+      # Platform Targets
+      build-windows: true
+      windows-format: 'zip'
+      windows-arch: 'x86_64'
+      windows-build-command: 'npm run build:zip'
+      build-macos: true
+      macos-format: 'dmg'
+      macos-arch: 'universal'
+      macos-build-command: 'npm run build:dmg'
+      build-linux: true
+      linux-format: 'tar.gz'
+      linux-arch: 'x86_64'
+      linux-build-command: 'npm run build:tar'
+      platform-api-url: 'https://api.henuos.com/api/v1/webhooks/github'
+    secrets:
+      platform-webhook-secret: ${{ secrets.HENU_WEBHOOK_SECRET }}

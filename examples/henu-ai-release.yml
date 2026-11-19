@@ -1,0 +1,60 @@
+name: 'Release HENU AI'
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version (e.g., 2.4.0)'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+        default: stable
+      release-notes:
+        description: 'Release changelog notes in Markdown'
+        required: false
+        default: 'Production release of HENU AI Intelligence Studio with multi-modal developer automation.'
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Execute HENU AI Release Pipeline
+    uses: henu-os/henu-common-actions/.github/workflows/release-orchestrator.yml@v1
+    with:
+      product-id: 'henu-ai'
+      product-name: 'HENU AI'
+      version: ${{ inputs.version || '2.4.0' }}
+      channel: ${{ inputs.channel || 'stable' }}
+      git-tag: ${{ github.ref_name }}
+      release-notes: ${{ inputs.release-notes || 'HENU AI Official Release' }}
+      min-hub-version: '1.0.0'
+      # Platform Targets
+      build-windows: true
+      windows-format: 'exe'
+      windows-arch: 'x86_64'
+      windows-build-command: 'npm run build:exe'
+      build-macos: true
+      macos-format: 'pkg'
+      macos-arch: 'universal'
+      macos-build-command: 'npm run build:pkg'
+      build-linux: true
+      linux-format: 'deb'
+      linux-arch: 'x86_64'
+      linux-build-command: 'npm run build:deb'
+      platform-api-url: 'https://api.henuos.com/api/v1/webhooks/github'
+    secrets:
+      platform-webhook-secret: ${{ secrets.HENU_WEBHOOK_SECRET }}

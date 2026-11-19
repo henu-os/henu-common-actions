@@ -1,0 +1,194 @@
+name: 'HENU Release Orchestrator'
+
+on:
+  workflow_call:
+    inputs:
+      product-id:
+        description: 'Kebab-case product identifier (e.g., henu-pa, henu-ai, henu-ide)'
+        required: true
+        type: string
+      product-name:
+        description: 'Display name of the application'
+        required: false
+        default: ''
+        type: string
+      version:
+        description: 'Semantic version string (e.g. 1.0.0)'
+        required: true
+        type: string
+      channel:
+        description: 'Target release tier (stable, beta, nightly)'
+        required: false
+        default: 'stable'
+        type: string
+      git-tag:
+        description: 'Git tag being published'
+        required: false
+        default: ''
+        type: string
+      release-notes:
+        description: 'Markdown changelog or release description'
+        required: true
+        type: string
+      min-hub-version:
+        description: 'Minimum required HENU HUB version'
+        required: false
+        default: '1.0.0'
+        type: string
+      build-linux:
+        description: 'Whether to build Linux package'
+        required: false
+        default: true
+        type: boolean
+      linux-format:
+        description: 'Linux package format (appimage, deb, tar.gz)'
+        required: false
+        default: 'appimage'
+        type: string
+      linux-arch:
+        description: 'Linux architecture'
+        required: false
+        default: 'x86_64'
+        type: string
+      linux-build-command:
+        description: 'Linux build command'
+        required: false
+        default: 'npm run build'
+        type: string
+      build-windows:
+        description: 'Whether to build Windows package'
+        required: false
+        default: true
+        type: boolean
+      windows-format:
+        description: 'Windows package format (msi, exe, zip)'
+        required: false
+        default: 'msi'
+        type: string
+      windows-arch:
+        description: 'Windows architecture'
+        required: false
+        default: 'x86_64'
+        type: string
+      windows-build-command:
+        description: 'Windows build command'
+        required: false
+        default: 'npm run build'
+        type: string
+      build-macos:
+        description: 'Whether to build macOS package'
+        required: false
+        default: true
+        type: boolean
+      macos-format:
+        description: 'macOS package format (dmg, pkg, zip)'
+        required: false
+        default: 'dmg'
+        type: string
+      macos-arch:
+        description: 'macOS architecture'
+        required: false
+        default: 'universal'
+        type: string
+      macos-build-command:
+        description: 'macOS build command'
+        required: false
+        default: 'npm run build'
+        type: string
+      platform-api-url:
+        description: 'Optional Platform API endpoint for direct release ingress'
+        required: false
+        default: ''
+        type: string
+    secrets:
+      platform-webhook-secret:
+        description: 'Optional secret for signing webhook to Platform API'
+        required: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  validate-params:
+    name: 1. Validate Release Parameters
+    uses: henu-os/henu-common-actions/.github/workflows/validate-release.yml@v1
+    with:
+      version: ${{ inputs.version }}
+      git-tag: ${{ inputs.git-tag }}
+      channel: ${{ inputs.channel }}
+      release-notes: ${{ inputs.release-notes }}
+
+  build-linux-job:
+    name: 2a. Build Linux
+    needs: [validate-params]
+    if: inputs.build-linux
+    uses: henu-os/henu-common-actions/.github/workflows/build-linux.yml@v1
+    with:
+      product-id: ${{ inputs.product-id }}
+      version: ${{ inputs.version }}
+      package-format: ${{ inputs.linux-format }}
+      arch: ${{ inputs.linux-arch }}
+      build-command: ${{ inputs.linux-build-command }}
+
+  build-windows-job:
+    name: 2b. Build Windows
+    needs: [validate-params]
+    if: inputs.build-windows
+    uses: henu-os/henu-common-actions/.github/workflows/build-windows.yml@v1
+    with:
+      product-id: ${{ inputs.product-id }}
+      version: ${{ inputs.version }}
+      package-format: ${{ inputs.windows-format }}
+      arch: ${{ inputs.windows-arch }}
+      build-command: ${{ inputs.windows-build-command }}
+
+  build-macos-job:
+    name: 2c. Build macOS
+    needs: [validate-params]
+    if: inputs.build-macos
+    uses: henu-os/henu-common-actions/.github/workflows/build-macos.yml@v1
+    with:
+      product-id: ${{ inputs.product-id }}
+      version: ${{ inputs.version }}
+      package-format: ${{ inputs.macos-format }}
+      arch: ${{ inputs.macos-arch }}
+      build-command: ${{ inputs.macos-build-command }}
+
+  generate-checksums-job:
+    name: 3. Generate SHA-256 Checksums
+    needs: [build-linux-job, build-windows-job, build-macos-job]
+    if: always() && (needs.build-linux-job.result == 'success' || !inputs.build-linux) && (needs.build-windows-job.result == 'success' || !inputs.build-windows) && (needs.build-macos-job.result == 'success' || !inputs.build-macos)
+    uses: henu-os/henu-common-actions/.github/workflows/generate-checksums.yml@v1
+    with:
+      assets-dir: release-assets
+
+  attest-provenance-job:
+    name: 4. Attest Build Provenance
+    needs: [generate-checksums-job]
+    uses: henu-os/henu-common-actions/.github/workflows/verify-provenance.yml@v1
+    with:
+      assets-dir: release-assets
+
+  publish-release-job:
+    name: 5. Publish GitHub Release
+    needs: [generate-checksums-job, attest-provenance-job]
+    uses: henu-os/henu-common-actions/.github/workflows/publish-release.yml@v1
+    with:
+      tag-name: ${{ inputs.git-tag != '' && inputs.git-tag || format('v{0}', inputs.version) }}
+      release-name: ${{ inputs.product-name != '' && format('{0} v{1}', inputs.product-name, inputs.version) || format('{0} v{1}', inputs.product-id, inputs.version) }}
+      release-notes: ${{ inputs.release-notes }}
+      channel: ${{ inputs.channel }}
+      assets-dir: release-assets
+
+  notify-platform-job:
+    name: 6. Notify Platform API
+    needs: [publish-release-job]
+    if: inputs.platform-api-url != '' && secrets.platform-webhook-secret != ''
+    uses: henu-os/henu-common-actions/.github/workflows/notify-platform-api.yml@v1
+    with:
+      api-url: ${{ inputs.platform-api-url }}
+      manifest-path: release-assets/henu-release-manifest.json
+    secrets:
+      webhook-secret: ${{ secrets.platform-webhook-secret }}

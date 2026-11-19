@@ -1,0 +1,21 @@
+name: 'Setup HENU Node.js Toolchain'
+description: 'Sets up Node.js with caching and strict dependency isolation'
+inputs:
+  node-version:
+    description: 'Node.js version (LTS default)'
+    required: false
+    default: '20'
+  cache-dependency-path:
+    description: 'Path to package-lock.json'
+    required: false
+    default: 'package-lock.json'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}

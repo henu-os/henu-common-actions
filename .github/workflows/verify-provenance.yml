@@ -1,0 +1,38 @@
+name: 'Reusable: Verify Provenance & Attestation'
+
+on:
+  workflow_call:
+    inputs:
+      assets-dir:
+        description: 'Directory containing binary package assets to attest'
+        required: false
+        default: 'release-assets'
+        type: string
+    outputs:
+      attestation-url:
+        description: 'Attestation bundle URL'
+        value: ${{ jobs.attest.outputs.attestation_url }}
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  attest:
+    name: Generate SLSA Build Attestation
+    runs-on: ubuntu-latest
+    outputs:
+      attestation_url: ${{ steps.attest.outputs.attestation-url }}
+    steps:
+      - name: Download Consolidated Assets
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: consolidated-release-assets
+          path: ${{ inputs.assets-dir }}
+
+      - name: Attest Build Provenance
+        id: attest
+        uses: actions/attest-build-provenance@c074443f1a5fb4aee83904b087670b732bc6ce70 # v1.4.3
+        with:
+          subject-path: '${{ inputs.assets-dir }}/*'

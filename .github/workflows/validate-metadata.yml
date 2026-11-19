@@ -1,0 +1,63 @@
+name: 'Reusable: Validate Package Metadata'
+
+on:
+  workflow_call:
+    inputs:
+      manifest-path:
+        description: 'Path to release contract manifest JSON'
+        required: true
+        type: string
+      assets-dir:
+        description: 'Directory containing downloaded binary assets to verify'
+        required: false
+        default: ''
+        type: string
+      git-tag:
+        description: 'Git tag being published'
+        required: false
+        default: ''
+        type: string
+    outputs:
+      is-valid:
+        description: 'True if manifest is compliant'
+        value: ${{ jobs.validate-schema.outputs.valid }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate-schema:
+    name: Validate Release Contract Schema
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.validate.outputs.valid }}
+    steps:
+      - name: Checkout Common Actions Validator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: henu-os/henu-common-actions
+          path: .henu-common-actions
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+        with:
+          node-version: '20'
+
+      - name: Install Validator Dependencies
+        working-directory: .henu-common-actions
+        run: npm ci --omit=dev
+
+      - name: Execute Contract Validation
+        id: validate
+        shell: bash
+        run: |
+          ARGS="${{ inputs.manifest-path }}"
+          if [ -n "${{ inputs.assets-dir }}" ]; then
+            ARGS="$ARGS --assets-dir ${{ inputs.assets-dir }}"
+          fi
+          if [ -n "${{ inputs.git-tag }}" ]; then
+            ARGS="$ARGS --git-tag ${{ inputs.git-tag }}"
+          fi
+          node .henu-common-actions/scripts/validate-release-contract.js $ARGS
+          echo "valid=true" >> $GITHUB_OUTPUT

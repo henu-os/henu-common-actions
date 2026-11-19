@@ -1,0 +1,84 @@
+name: 'Reusable: Publish Release'
+
+on:
+  workflow_call:
+    inputs:
+      tag-name:
+        description: 'Git tag for the release'
+        required: true
+        type: string
+      release-name:
+        description: 'Title of the release'
+        required: true
+        type: string
+      release-notes:
+        description: 'Release changelog notes in Markdown'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel (stable, beta, nightly)'
+        required: true
+        type: string
+      assets-dir:
+        description: 'Directory holding the final release packages'
+        required: false
+        default: 'release-assets'
+        type: string
+      draft:
+        description: 'Publish as draft release'
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      release-id:
+        description: 'GitHub Release identifier'
+        value: ${{ jobs.publish.outputs.release_id }}
+      release-url:
+        description: 'HTML URL of published release'
+        value: ${{ jobs.publish.outputs.release_url }}
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.gh_release.outputs.id }}
+      release_url: ${{ steps.gh_release.outputs.html_url }}
+    steps:
+      - name: Download Final Release Packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: consolidated-release-assets
+          path: ${{ inputs.assets-dir }}
+
+      - name: Verify Package Assets Completeness
+        shell: bash
+        run: |
+          FILE_COUNT=$(find "${{ inputs.assets-dir }}" -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "::error::No release assets found to publish in '${{ inputs.assets-dir }}'"
+            exit 1
+          fi
+
+          if [ ! -f "${{ inputs.assets-dir }}/SHA256SUMS" ]; then
+            echo "::error::SHA256SUMS file missing from release bundle. Releases cannot be published without cryptographic checksums."
+            exit 1
+          fi
+
+          echo "Ready to publish $FILE_COUNT assets for ${{ inputs.tag-name }}"
+
+      - name: Publish to GitHub Releases
+        id: gh_release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
+        with:
+          tag_name: ${{ inputs.tag-name }}
+          name: ${{ inputs.release-name }}
+          body: ${{ inputs.release-notes }}
+          prerelease: ${{ inputs.channel != 'stable' }}
+          draft: ${{ inputs.draft }}
+          files: |
+            ${{ inputs.assets-dir }}/*
+          fail_on_unmatched_files: true

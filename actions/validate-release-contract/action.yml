@@ -1,0 +1,29 @@
+name: 'Validate HENU Release Contract'
+description: 'Validates release metadata, platform completeness, and cryptographic digests against the HENU Release Contract'
+inputs:
+  contract-path:
+    description: 'Path to release contract JSON manifest'
+    required: true
+  assets-dir:
+    description: 'Directory containing binary package assets to verify on disk'
+    required: false
+    default: ''
+  git-tag:
+    description: 'Git tag being published'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Release Contract Validator
+      shell: bash
+      run: |
+        ARGS="${{ inputs.contract-path }}"
+        if [ -n "${{ inputs.assets-dir }}" ]; then
+          ARGS="$ARGS --assets-dir ${{ inputs.assets-dir }}"
+        fi
+        if [ -n "${{ inputs.git-tag }}" ]; then
+          ARGS="$ARGS --git-tag ${{ inputs.git-tag }}"
+        fi
+        node ${{ github.action_path }}/../../scripts/validate-release-contract.js $ARGS

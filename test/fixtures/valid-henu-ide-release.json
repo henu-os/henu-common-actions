@@ -1,0 +1,40 @@
+{
+  "productId": "henu-ide",
+  "productName": "HENU IDE",
+  "version": "3.1.2",
+  "channel": "stable",
+  "releaseDate": "2026-11-19T00:00:00Z",
+  "releaseNotes": "Production release of HENU IDE with accelerated polyglot language servers.",
+  "minHubVersion": "1.0.0",
+  "repository": {
+    "owner": "henu-os",
+    "name": "henu-ide",
+    "url": "https://github.com/henu-os/henu-ide"
+  },
+  "assets": [
+    {
+      "fileName": "henu-ide-3.1.2-windows-x64.zip",
+      "os": "windows",
+      "arch": "x86_64",
+      "packageFormat": "zip",
+      "sha256": "c3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 110000000
+    },
+    {
+      "fileName": "henu-ide-3.1.2-macos-universal.dmg",
+      "os": "macos",
+      "arch": "universal",
+      "packageFormat": "dmg",
+      "sha256": "c3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 125000000
+    },
+    {
+      "fileName": "henu-ide-3.1.2-linux-x86_64.tar.gz",
+      "os": "linux",
+      "arch": "x86_64",
+      "packageFormat": "tar.gz",
+      "sha256": "c3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 118000000
+    }
+  ]
+}

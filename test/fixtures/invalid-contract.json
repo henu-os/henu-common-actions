@@ -1,0 +1,16 @@
+{
+  "productId": "INVALID_PRODUCT_NAME_UPPERCASE",
+  "version": "not-a-semver",
+  "channel": "unsupported-tier",
+  "releaseNotes": "",
+  "assets": [
+    {
+      "fileName": "pkg",
+      "os": "solaris",
+      "arch": "sparc",
+      "packageFormat": "unsupported",
+      "sha256": "short-hash",
+      "sizeBytes": 0
+    }
+  ]
+}

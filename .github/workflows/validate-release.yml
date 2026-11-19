@@ -1,0 +1,81 @@
+name: 'Reusable: Validate Release'
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Semantic version string to validate'
+        required: true
+        type: string
+      git-tag:
+        description: 'Git tag being published'
+        required: false
+        default: ''
+        type: string
+      channel:
+        description: 'Target release channel (stable, beta, nightly)'
+        required: true
+        type: string
+      release-notes:
+        description: 'Changelog or release notes'
+        required: true
+        type: string
+    outputs:
+      is-valid:
+        description: 'True if validation succeeded'
+        value: ${{ jobs.validate.outputs.valid }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Release Semantics
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.check.outputs.valid }}
+    steps:
+      - name: Validate Semver and Channel Rules
+        id: check
+        shell: bash
+        run: |
+          VERSION="${{ inputs.version }}"
+          CHANNEL="${{ inputs.channel }}"
+          TAG="${{ inputs.git-tag }}"
+          NOTES="${{ inputs.release-notes }}"
+
+          # 1. Semver 2.0.0 regex check
+          SEMVER_REGEX="^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$"
+          if [[ ! "$VERSION" =~ $SEMVER_REGEX ]]; then
+            echo "::error::Invalid SemVer 2.0.0 format: $VERSION"
+            exit 1
+          fi
+
+          # 2. Tag alignment
+          if [ -n "$TAG" ]; then
+            CLEAN_TAG="${TAG#v}"
+            if [ "$CLEAN_TAG" != "$VERSION" ]; then
+              echo "::error::Git tag '$TAG' does not match version '$VERSION'"
+              exit 1
+            fi
+          fi
+
+          # 3. Channel safety checks
+          if [[ "$VERSION" == *"-"* ]] && [ "$CHANNEL" == "stable" ]; then
+            echo "::error::Pre-release version '$VERSION' cannot be published to 'stable' channel"
+            exit 1
+          fi
+
+          if [[ "$VERSION" != *"-"* ]] && [ "$CHANNEL" == "nightly" ]; then
+            echo "::error::Stable version '$VERSION' should not be published to 'nightly' channel without pre-release identifier"
+            exit 1
+          fi
+
+          # 4. Release notes non-empty
+          if [ -z "$NOTES" ] || [ "${#NOTES}" -lt 5 ]; then
+            echo "::error::Release notes must contain meaningful markdown changelog"
+            exit 1
+          fi
+
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "Release parameters validated successfully for $VERSION on channel $CHANNEL"

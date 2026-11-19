@@ -1,0 +1,87 @@
+name: 'Reusable: Build Windows Package'
+
+on:
+  workflow_call:
+    inputs:
+      product-id:
+        description: 'Kebab-case product identifier'
+        required: true
+        type: string
+      version:
+        description: 'Release semantic version'
+        required: true
+        type: string
+      package-format:
+        description: 'Target package format (msi, exe, zip)'
+        required: false
+        default: 'msi'
+        type: string
+      arch:
+        description: 'CPU architecture'
+        required: false
+        default: 'x86_64'
+        type: string
+      build-command:
+        description: 'PowerShell command to execute Windows build'
+        required: false
+        default: 'npm run build'
+        type: string
+      output-dir:
+        description: 'Directory containing built artifacts'
+        required: false
+        default: 'dist'
+        type: string
+    outputs:
+      artifact-name:
+        description: 'Uploaded artifact name'
+        value: windows-${{ inputs.product-id }}-${{ inputs.arch }}-${{ inputs.package-format }}
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows (${{ inputs.arch }} / ${{ inputs.package-format }})
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js Toolchain
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute Windows Build
+        run: ${{ inputs.build-command }}
+
+      - name: Package Verification
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path output | Out-Null
+          $pkg = Get-ChildItem -Path "${{ inputs.output-dir }}" -Recurse -File | Where-Object {
+            $_.Extension -like ".${{ inputs.package-format }}*"
+          } | Select-Object -First 1
+
+          if (-not $pkg) {
+            Write-Error "No Windows package matching format '${{ inputs.package-format }}' found in '${{ inputs.output-dir }}'"
+            exit 1
+          }
+
+          $targetName = "${{ inputs.product-id }}-${{ inputs.version }}-windows-${{ inputs.arch }}.${{ inputs.package-format }}"
+          Copy-Item -Path $pkg.FullName -Destination "output\$targetName"
+          Write-Host "Package prepared: output\$targetName ($((Get-Item "output\$targetName").Length) bytes)"
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: windows-${{ inputs.product-id }}-${{ inputs.arch }}-${{ inputs.package-format }}
+          path: output/*
+          if-no-files-found: error
+          retention-days: 5

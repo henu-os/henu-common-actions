@@ -1,0 +1,47 @@
+name: 'Reusable: Notify Platform API'
+
+on:
+  workflow_call:
+    inputs:
+      api-url:
+        description: 'HENU Platform API Webhook or Ingress URL'
+        required: true
+        type: string
+      manifest-path:
+        description: 'Path to release contract manifest JSON'
+        required: true
+        type: string
+    secrets:
+      webhook-secret:
+        description: 'HMAC Webhook signing secret'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Deliver Signed Webhook to Platform API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Common Actions Tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: henu-os/henu-common-actions
+          path: .henu-common-actions
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+        with:
+          node-version: '20'
+
+      - name: Send Signed Release Notification
+        shell: bash
+        env:
+          HENU_PLATFORM_API_URL: ${{ inputs.api-url }}
+          HENU_WEBHOOK_SECRET: ${{ secrets.webhook-secret }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          node .henu-common-actions/scripts/notify-platform.js "${{ inputs.manifest-path }}"

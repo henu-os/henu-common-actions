@@ -1,0 +1,23 @@
+name: 'Generate HENU Release Manifest'
+description: 'Builds certified release contract manifest from build config and binary assets'
+inputs:
+  config-path:
+    description: 'Path to release metadata configuration JSON'
+    required: true
+  output-path:
+    description: 'Output path for generated release manifest JSON'
+    required: false
+    default: 'henu-release-manifest.json'
+
+outputs:
+  manifest-path:
+    description: 'Path to generated manifest'
+    value: ${{ inputs.output-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate Manifest
+      shell: bash
+      run: |
+        node ${{ github.action_path }}/../../scripts/generate-release-manifest.js "${{ inputs.config-path }}" "${{ inputs.output-path }}"

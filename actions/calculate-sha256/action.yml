@@ -1,0 +1,29 @@
+name: 'Calculate SHA-256 Checksums'
+description: 'Generates streaming SHA-256 digests and SHA256SUMS file for all assets in directory'
+inputs:
+  assets-dir:
+    description: 'Directory containing assets to hash'
+    required: true
+  output-file:
+    description: 'Target path for SHA256SUMS output'
+    required: false
+    default: ''
+
+outputs:
+  sums-file:
+    description: 'Path to generated SHA256SUMS file'
+    value: ${{ steps.calc.outputs.sums_path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: calc
+      name: Generate SHA-256
+      shell: bash
+      run: |
+        OUT_ARG="${{ inputs.output-file }}"
+        if [ -z "$OUT_ARG" ]; then
+          OUT_ARG="${{ inputs.assets-dir }}/SHA256SUMS"
+        fi
+        node ${{ github.action_path }}/../../scripts/generate-checksums.js "${{ inputs.assets-dir }}" "$OUT_ARG"
+        echo "sums_path=$OUT_ARG" >> $GITHUB_OUTPUT

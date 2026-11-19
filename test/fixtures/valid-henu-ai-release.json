@@ -1,0 +1,40 @@
+{
+  "productId": "henu-ai",
+  "productName": "HENU AI",
+  "version": "2.4.0",
+  "channel": "stable",
+  "releaseDate": "2026-11-19T00:00:00Z",
+  "releaseNotes": "Production release of HENU AI Intelligence Studio.",
+  "minHubVersion": "1.0.0",
+  "repository": {
+    "owner": "henu-os",
+    "name": "henu-ai",
+    "url": "https://github.com/henu-os/henu-ai"
+  },
+  "assets": [
+    {
+      "fileName": "henu-ai-2.4.0-windows-x64.exe",
+      "os": "windows",
+      "arch": "x86_64",
+      "packageFormat": "exe",
+      "sha256": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 85000000
+    },
+    {
+      "fileName": "henu-ai-2.4.0-macos-universal.pkg",
+      "os": "macos",
+      "arch": "universal",
+      "packageFormat": "pkg",
+      "sha256": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 92000000
+    },
+    {
+      "fileName": "henu-ai-2.4.0-linux-x86_64.deb",
+      "os": "linux",
+      "arch": "x86_64",
+      "packageFormat": "deb",
+      "sha256": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 88000000
+    }
+  ]
+}
