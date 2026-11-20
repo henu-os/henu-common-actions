@@ -2,7 +2,12 @@
   "name": "henu-common-actions",
   "version": "1.0.0",
   "description": "Reusable GitHub Actions workflows and release automation for the HENU Operating System ecosystem",
-  "author": "HENU OS PRIVATE LIMITED",
+  "homepage": "https://www.henuos.in/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/henu-os/henu-common-actions.git"
+  },
+  "author": "HENU OS PRIVATE LIMITED <support@henuos.in>",
   "license": "UNLICENSED",
   "private": true,
   "scripts": {

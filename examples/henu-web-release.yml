@@ -1,0 +1,33 @@
+name: 'Release HENU Web Application'
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Execute Web Release Engine
+    uses: henu-os/henu-common-actions/.github/workflows/release-orchestrator.yml@v1
+    with:
+      product-id: 'henu-admin'
+      product-name: 'HENU Platform Administration Console'
+      version: ${{ github.ref_name }}
+      channel: 'stable'
+      git-tag: ${{ github.ref_name }}
+      release-notes: |
+        ### HENU Web Application Production Release
+        - Production optimized static build and edge distribution assets.
+        - Verified standalone server artifact.
+      build-linux: false
+      build-windows: false
+      build-macos: false
+      build-web: true
+      web-build-command: 'npm run build'
+      web-output-dir: '.next/standalone'
+      web-deploy-target: 'none'

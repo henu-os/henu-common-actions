@@ -81,7 +81,7 @@ describe('GitHub Actions Workflows & Security Verification', () => {
   });
 
   it('verifies example workflows for HENU PA, HENU AI and HENU IDE exist and configure the orchestrator', () => {
-    expect(exampleFiles).toHaveLength(3);
+    expect(exampleFiles.length).toBeGreaterThanOrEqual(3);
 
     const paContent = fs.readFileSync(path.join(examplesDir, 'henu-pa-release.yml'), 'utf8');
     expect(paContent).toContain("product-id: 'henu-pa'");
@@ -100,5 +100,9 @@ describe('GitHub Actions Workflows & Security Verification', () => {
     expect(ideContent).toContain("windows-format: 'zip'");
     expect(ideContent).toContain("macos-format: 'dmg'");
     expect(ideContent).toContain("linux-format: 'tar.gz'");
+
+    const webContent = fs.readFileSync(path.join(examplesDir, 'henu-web-release.yml'), 'utf8');
+    expect(webContent).toContain("product-id: 'henu-admin'");
+    expect(webContent).toContain('build-web: true');
   });
 });

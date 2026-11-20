@@ -1,22 +1,27 @@
 # HENU Common Actions & Release Automation
 
-**henu-common-actions** provides reusable GitHub Actions workflows, custom composite actions, validation schemas, and automated release tooling for independent product repositories across the **HENU Operating System** ecosystem.
+**henu-common-actions** is the official build, verification, and release engine engineered by **[HENU OS PRIVATE LIMITED](https://www.henuos.in/)**. It provides production-grade, security-hardened reusable GitHub Actions workflows, custom composite actions, schema validators, and release automation for all desktop and web products across the **HENU Operating System** ecosystem.
+
+- **Official Website:** [https://www.henuos.in/](https://www.henuos.in/)
+- **Organization:** [https://github.com/henu-os](https://github.com/henu-os)
 
 ---
 
 ## 1. Architecture & Release Contract
 
-Every supported product release must strictly conform to the **HENU Release Contract** defined in [`schemas/release-contract.schema.json`](file:///H:/HENU-PLATFORM/henu-common-actions/schemas/release-contract.schema.json):
+Every supported product release must strictly conform to the **HENU Release Contract** defined in [`schemas/release-contract.schema.json`](file:///H:/HENU-PLATFORM/henu-common-actions/schemas/release-contract.schema.json) and [`schemas/release-manifest.schema.json`](file:///H:/HENU-PLATFORM/henu-common-actions/schemas/release-manifest.schema.json):
 
-- **Product ID**: Kebab-case identifier (e.g. `henu-pa`, `henu-ai`, `henu-ide`).
+- **Product ID**: Kebab-case identifier (e.g. `henu-pa`, `henu-ai`, `henu-ide`, `henu-admin`).
 - **Semantic Version**: Strict SemVer 2.0.0 (`MAJOR.MINOR.PATCH[-PRERELEASE]`).
-- **Release Channel**: `stable`, `beta`, or `nightly`.
+- **Release Channel**: `stable`, `beta`, `alpha`, or `nightly`.
+- **Application Types**: `desktop`, `web`, `cli`, `hybrid`.
 - **Target OS**: `windows`, `macos`, `linux`.
 - **CPU Architecture**: `x86_64`, `arm64`, `universal`.
-- **Package Format**: `msi`, `exe`, `dmg`, `pkg`, `deb`, `appimage`, `tar.gz`, `zip`.
+- **Desktop Formats**: `msi`, `exe`, `dmg`, `pkg`, `deb`, `appimage`, `tar.gz`, `zip`.
+- **Web Formats**: Production bundle archive (`.tar.gz`) with verified HTTPS hosting entrypoints.
 - **Cryptographic Integrity**: Streaming SHA-256 digests and unified `SHA256SUMS`.
 - **Release Notes**: Mandatory Markdown changelog.
-- **Minimum HUB Version**: Required client version for orchestration.
+- **Minimum HUB Version**: Required client version for desktop orchestration.
 
 ---
 
@@ -27,9 +32,10 @@ All reusable workflows are located in [`.github/workflows/`](file:///H:/HENU-PLA
 | Workflow                       | Description                                   | Runner           | Key Output / Artifact                 |
 | :----------------------------- | :-------------------------------------------- | :--------------- | :------------------------------------ |
 | **`release-orchestrator.yml`** | Central multi-stage release coordinator       | Multi-OS         | GitHub Release, Checksums, Provenance |
-| **`build-linux.yml`**          | Linux packaging (`appimage`, `deb`, `tar.gz`) | `ubuntu-latest`  | Linux binary artifact                 |
+| **`build-linux.yml`**          | Linux packaging (`appimage`, `deb`, `tar.gz`) | Native Linux     | Linux binary artifact                 |
 | **`build-windows.yml`**        | Windows packaging (`msi`, `exe`, `zip`)       | `windows-latest` | Windows installer artifact            |
-| **`build-macos.yml`**          | macOS packaging (`dmg`, `pkg`, `zip`)         | `macos-latest`   | macOS bundle artifact                 |
+| **`build-macos.yml`**          | macOS packaging (`dmg`, `pkg`, `zip`)         | Native macOS     | macOS bundle artifact                 |
+| **`build-web.yml`**            | Web app build & hosting deployment            | `ubuntu-latest`  | Web distribution archive              |
 | **`validate-release.yml`**     | Validates SemVer, Git tags, channel alignment | `ubuntu-latest`  | `is-valid`                            |
 | **`validate-metadata.yml`**    | Validates contract against JSON Schema        | `ubuntu-latest`  | `is-valid`                            |
 | **`generate-checksums.yml`**   | Multi-platform streaming SHA-256 calculation  | `ubuntu-latest`  | `SHA256SUMS` file                     |

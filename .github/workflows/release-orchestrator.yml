@@ -95,6 +95,31 @@ on:
         required: false
         default: 'npm run build'
         type: string
+      build-web:
+        description: 'Whether to build Web application package'
+        required: false
+        default: false
+        type: boolean
+      web-build-command:
+        description: 'Shell command for Web build'
+        required: false
+        default: 'npm run build'
+        type: string
+      web-output-dir:
+        description: 'Directory containing built web assets'
+        required: false
+        default: 'dist'
+        type: string
+      web-deploy-target:
+        description: 'Configurable hosting target (none, github-pages, custom)'
+        required: false
+        default: 'none'
+        type: string
+      web-deploy-command:
+        description: 'Custom shell command for hosting deployment'
+        required: false
+        default: ''
+        type: string
       platform-api-url:
         description: 'Optional Platform API endpoint for direct release ingress'
         required: false
@@ -156,10 +181,23 @@ jobs:
       arch: ${{ inputs.macos-arch }}
       build-command: ${{ inputs.macos-build-command }}
 
+  build-web-job:
+    name: 2d. Build Web
+    needs: [validate-params]
+    if: inputs.build-web
+    uses: henu-os/henu-common-actions/.github/workflows/build-web.yml@v1
+    with:
+      product-id: ${{ inputs.product-id }}
+      version: ${{ inputs.version }}
+      build-command: ${{ inputs.web-build-command }}
+      output-dir: ${{ inputs.web-output-dir }}
+      deploy-target: ${{ inputs.web-deploy-target }}
+      deploy-command: ${{ inputs.web-deploy-command }}
+
   generate-checksums-job:
     name: 3. Generate SHA-256 Checksums
-    needs: [build-linux-job, build-windows-job, build-macos-job]
-    if: always() && (needs.build-linux-job.result == 'success' || !inputs.build-linux) && (needs.build-windows-job.result == 'success' || !inputs.build-windows) && (needs.build-macos-job.result == 'success' || !inputs.build-macos)
+    needs: [build-linux-job, build-windows-job, build-macos-job, build-web-job]
+    if: always() && (needs.build-linux-job.result == 'success' || !inputs.build-linux) && (needs.build-windows-job.result == 'success' || !inputs.build-windows) && (needs.build-macos-job.result == 'success' || !inputs.build-macos) && (needs.build-web-job.result == 'success' || !inputs.build-web)
     uses: henu-os/henu-common-actions/.github/workflows/generate-checksums.yml@v1
     with:
       assets-dir: release-assets

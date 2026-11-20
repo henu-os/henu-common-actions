@@ -65,18 +65,22 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path output | Out-Null
+          $fmt = "${{ inputs.package-format }}".ToLower()
+          $targetExt = ".$fmt"
+
           $pkg = Get-ChildItem -Path "${{ inputs.output-dir }}" -Recurse -File | Where-Object {
-            $_.Extension -like ".${{ inputs.package-format }}*"
+            $_.Extension.ToLower() -eq $targetExt -and $_.Name -notmatch "(unins|\.blockmap)"
           } | Select-Object -First 1
 
           if (-not $pkg) {
-            Write-Error "No Windows package matching format '${{ inputs.package-format }}' found in '${{ inputs.output-dir }}'"
+            Write-Error "No Windows package matching format '$fmt' found in '${{ inputs.output-dir }}'"
             exit 1
           }
 
-          $targetName = "${{ inputs.product-id }}-${{ inputs.version }}-windows-${{ inputs.arch }}.${{ inputs.package-format }}"
+          $targetName = "${{ inputs.product-id }}-${{ inputs.version }}-windows-${{ inputs.arch }}.$fmt"
           Copy-Item -Path $pkg.FullName -Destination "output\$targetName"
-          Write-Host "Package prepared: output\$targetName ($((Get-Item "output\$targetName").Length) bytes)"
+          $size = (Get-Item "output\$targetName").Length
+          Write-Host "Windows package verified and prepared: output\$targetName ($size bytes)"
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

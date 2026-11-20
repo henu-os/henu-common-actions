@@ -42,7 +42,7 @@ permissions:
 jobs:
   build-linux:
     name: Build Linux (${{ inputs.arch }} / ${{ inputs.package-format }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -65,14 +65,22 @@ jobs:
         shell: bash
         run: |
           mkdir -p output
-          FOUND_PACKAGE=$(find ${{ inputs.output-dir }} -type f \( -name "*.${{ inputs.package-format }}" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" \) | head -n 1)
+          PKG_FMT="${{ inputs.package-format }}"
+          if [ "$PKG_FMT" = "tar.gz" ] || [ "$PKG_FMT" = "tar_gz" ]; then
+            FOUND_PACKAGE=$(find "${{ inputs.output-dir }}" -type f -name "*.tar.gz" | head -n 1)
+          else
+            FOUND_PACKAGE=$(find "${{ inputs.output-dir }}" -type f -iname "*.$PKG_FMT" -not -name "*.blockmap" | head -n 1)
+          fi
+
           if [ -z "$FOUND_PACKAGE" ]; then
-            echo "::error::No package matching format '${{ inputs.package-format }}' found in '${{ inputs.output-dir }}'"
+            echo "::error::No Linux package matching format '$PKG_FMT' found in '${{ inputs.output-dir }}'"
             exit 1
           fi
+
           TARGET_NAME="${{ inputs.product-id }}-${{ inputs.version }}-linux-${{ inputs.arch }}.${{ inputs.package-format }}"
           cp "$FOUND_PACKAGE" "output/$TARGET_NAME"
-          echo "Package prepared: output/$TARGET_NAME ($(stat -c%s output/$TARGET_NAME) bytes)"
+          FILE_SIZE=$(stat -c%s "output/$TARGET_NAME")
+          echo "Linux package verified and prepared: output/$TARGET_NAME ($FILE_SIZE bytes)"
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3

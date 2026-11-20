@@ -1,0 +1,103 @@
+name: 'Reusable: Build Web Application Package'
+
+on:
+  workflow_call:
+    inputs:
+      product-id:
+        description: 'Kebab-case product identifier (e.g. henu-addplo, henu-hub-docs)'
+        required: true
+        type: string
+      version:
+        description: 'Release semantic version'
+        required: true
+        type: string
+      build-command:
+        description: 'Shell command to execute Web production build'
+        required: false
+        default: 'npm run build'
+        type: string
+      output-dir:
+        description: 'Directory containing built web distribution assets (e.g. dist, out, build)'
+        required: false
+        default: 'dist'
+        type: string
+      deploy-target:
+        description: 'Configurable hosting target (none, github-pages, custom)'
+        required: false
+        default: 'none'
+        type: string
+      deploy-command:
+        description: 'Custom shell command to execute hosting deployment when deploy-target is custom'
+        required: false
+        default: ''
+        type: string
+      node-version:
+        description: 'Node.js LTS runtime version'
+        required: false
+        default: '20'
+        type: string
+    outputs:
+      artifact-name:
+        description: 'Uploaded artifact identifier'
+        value: web-${{ inputs.product-id }}-${{ inputs.version }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-web:
+    name: Build Web (${{ inputs.product-id }} / v${{ inputs.version }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js Toolchain
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5a1 # v4.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute Web Production Build
+        run: ${{ inputs.build-command }}
+
+      - name: Package & Archive Web Distribution
+        shell: bash
+        run: |
+          mkdir -p output
+          if [ ! -d "${{ inputs.output-dir }}" ]; then
+            echo "::error::Web build output directory '${{ inputs.output-dir }}' does not exist."
+            exit 1
+          fi
+
+          FILE_COUNT=$(find "${{ inputs.output-dir }}" -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "::error::Web build directory '${{ inputs.output-dir }}' is empty."
+            exit 1
+          fi
+
+          TARGET_TARBALL="${{ inputs.product-id }}-${{ inputs.version }}-web.tar.gz"
+          tar -czf "output/$TARGET_TARBALL" -C "${{ inputs.output-dir }}" .
+          BUNDLE_SIZE=$(stat -c%s "output/$TARGET_TARBALL")
+          echo "Web distribution bundle created: output/$TARGET_TARBALL ($BUNDLE_SIZE bytes, $FILE_COUNT static assets)"
+
+      - name: Execute Configurable Web Deployment
+        if: inputs.deploy-target != 'none' && inputs.deploy-command != ''
+        shell: bash
+        run: |
+          echo "Executing web deployment target [${{ inputs.deploy-target }}]..."
+          ${{ inputs.deploy-command }}
+
+      - name: Upload Web Distribution Artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: web-${{ inputs.product-id }}-${{ inputs.version }}
+          path: output/*
+          if-no-files-found: error
+          retention-days: 5
